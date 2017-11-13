@@ -10,6 +10,7 @@ end
 
 
 _unique_factor(factors::Vector{Factor}, fname::String) = all(fname ≠ y.name for y in factors)
+
 function edit_metadata!(a::ExperimentalSetup.Log, builder)
     update = Signal(nothing)
     backup = deepcopy(a)
@@ -57,16 +58,16 @@ function edit_metadata!(a::ExperimentalSetup.Log, builder)
         showall(builder["metadata.box"])
     end
 
-    ok = button(widget = builder["metadata.ok"], init=nothing) do _
+    ok = button(widget = builder["metadata.ok"]) do _
         populate_collect!(a.md.factors, builder)
-        nothing
         visible(builder["metadata.window"], false)
     end
 
     cancel = button(widget = builder["metadata.cancel"], init=nothing) do _
         a = deepcopy(backup)
-        push!(update, nothing)
+        # push!(update, nothing)
         visible(builder["metadata.window"], false)
+        nothing
     end
 
     return a
