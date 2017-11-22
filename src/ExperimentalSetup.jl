@@ -1,9 +1,10 @@
 module ExperimentalSetup
 
-using DataStructures
+using DataStructures, JSON
 
 export  Factor, Rep,
-        delete, replace!
+        delete, replace!,
+        saveJSON, loadJSON
 
 import Base: ∈, push!, delete!, empty!
 
@@ -59,20 +60,29 @@ Log() = Log(Metadata())
 
 # pushes
 
+# Push a set of levels 
 function push!(md::Metadata, str_levels::Vector{String})
     @assert length(str_levels) == md.nfactors "Number of levels doesn't match metadata"
     levels = Int[]
+    
+    # Ensure that each of the levels supplied exist in the Metatdata
     for (factor, l) in zip(md.factors, str_levels)
         i = findfirst(factor.levels, l)
         @assert i ≠ 0 "Factor $(factor.name) does not have level $l"
         push!(levels, i)
     end
+    
+    # ??? Try to find an existing setup with the same levels perhaps?
     i = findfirst(x -> x.levels == levels, md.setups)
     if i == 0
         push!(md.setups, Setup(levels, Ref(0)))
         i = length(md.setups)
     end
+
+    # Increment the level count
     md.setups[i].n.x += 1
+
+    # Return the index and the count
     return (i, md.setups[i].n.x)
 end
 
@@ -82,7 +92,6 @@ function push!(a::Log, str_levels::Vector{String}, comment::String)
     a.reps[a.last] = Rep(i, replicate, comment)
     return a
 end
-
 # empty
 
 function empty!(a::Log)
@@ -252,5 +261,52 @@ function combine(logs::Log...)
     return a
 end
 
+# Converts a JSON representation of a Log to a Log object
+function parseJSON(jsonString::AbstractString)
+    # create the log objects
+    json = JSON.parse(jsonString)
+    log = Log(
+        Metadata(
+            map(x -> Factor(x["name"], x["levels"]), json["md"]["factors"]),
+            map(y -> Setup(y["levels"], Base.RefValue{Int64}(y["n"]["x"])), json["md"]["setups"])
+        ),
+        json["last"],
+        SortedDict{UInt64, Rep}()
+    )
+    
+    # add the reps
+    for (k,v) in json["reps"]
+       log.reps[parse(UInt64, k)] = Rep(v["setup"], v["replicate"], v["comment"])
+    end
 
+    return log
+end
+
+# Reads the supplied file and tries to convert the containing JSON to a Log object
+function loadJSON(filename::String)
+    @assert isfile(filename) "File does not exist."
+    
+    json = ""
+    # read and parse 
+    open(filename, "r") do f
+        json = readstring(f)
+    end
+
+    @assert length(json) > 0 "Unable to read from file, or file is empty."
+    return parseJSON(json)
+end
+
+# Converts the suppplied Log object to a JSON string and saves it to a file
+function saveJSON(filename::String, log::Log, overwrite::Bool)
+    @assert overwrite || !isfile(filename) "File alread exists."
+    
+    # write the Log out as a JSON string
+    open(filename, "w") do f
+        write(f, JSON.json(log))
+    end
+end
+
+# Overloaded saveJSON method--this instance automatically overwrites the file
+saveJSON(filename::String, log::Log) = saveJSON(filename, log, true)
+    
 end # module

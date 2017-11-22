@@ -111,4 +111,30 @@ end
 
 end
 
+@testset "json" begin
+    const filename = "/tmp/a.json"
+    # create a log object
+    a = create_log()
+    
+    # convert it to JSON
+    b = JSON.json(a)
+    # read that JSON back into another Log object
+    c = ES.parseJSON(b)
+    # the Log objects should be identical
+    @test a == c
 
+    # save the object to a file
+    ES.saveJSON(filename, a)
+    # we expect the file to have been created
+    @test isfile(filename)
+    open(filename, "r") do f
+        d = readstring(f)
+        # we expect the file to contain the same JSON
+        @test JSON.json(a) == d
+    end
+
+    #read the file back
+    b = ES.loadJSON(filename)
+    # we expect the b object to be the same as the a object
+    @test a == b
+end
