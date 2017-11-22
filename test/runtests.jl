@@ -112,29 +112,57 @@ end
 end
 
 @testset "json" begin
-    const filename = "/tmp/a.json"
-    # create a log object
-    a = create_log()
-    
-    # convert it to JSON
-    b = JSON.json(a)
-    # read that JSON back into another Log object
-    c = ES.parseJSON(b)
-    # the Log objects should be identical
-    @test a == c
+    const filename = "log.json"
+    # create a log object to use for our tests
+    log = create_log()
 
+    # ExperimentalSetup.parseJSON tests: valid cases
+    # if we convert a Log to JSON and back again, the resulting Log should be identical
+    jsonString = JSON.json(log)
+    @test log == ES.parseJSON(jsonString)
+    # we should be able to parse an empty log without any errors
+    @test ES.Log() == ES.parseJSON(JSON.json(ES.Log()))
+
+    # ExperimentalSetup.parseJSON tests: invalid cases
+    # we expect an exception if we try to parse an empty string
+    @test_throws Exception ES.parseJSON("")
+    # we also expect an exception if we try to parse an incomplete/malformed JSON string
+    @test_throws Exception ES.parseJSON(jsonString[1:end-1])
+    
+    # ExperimentalSetup.saveJSON tests: valid cases
     # save the object to a file
-    ES.saveJSON(filename, a)
+    ES.saveJSON(filename, log)
     # we expect the file to have been created
     @test isfile(filename)
     open(filename, "r") do f
-        d = readstring(f)
         # we expect the file to contain the same JSON
-        @test JSON.json(a) == d
+        @test JSON.json(log) == readstring(f)
     end
+    # we expect an error if we pass a filename that exists with overwrite = false
+    @test_throws Exception ES.saveJSON(filename, log, false)
+    
+    # ExperimentalSetup.saveJSON tests: invalid cases
+    # we expect an error if we pass an empty filename
+    @test_throws Exception ES.saveJSON("", log)
+    # we expect an error if we pass an empty Log
+    @test_throws Exception ES.saveJSON(filename, None)
+    
+    # ExperimentalSetup.loadJSON tests: valid cases
+    # we expect the loaded object to be the same as the saved object
+    parsedLogFromFile = ES.loadJSON(filename)
+    @test log == parsedLogFromFile
 
-    #read the file back
-    b = ES.loadJSON(filename)
-    # we expect the b object to be the same as the a object
-    @test a == b
+    # ExperimentalSetup.loadJSON tests: invalid cases
+    # we expect an error if we pass an empty filename
+    @test_throws Exception ES.loadJSON("")
+    # we expect an error if we pass a file that does not exist
+    @test_throws Exception ES.loadJSON("this.file.should.not.exist")
+    # we expect an error if we pass a file that does not contain valid JSON
+    open(filename, "w") do f
+        write(f, "This is not a JSON string!")
+    end
+    @test_throws Exception parsedLogFromFile = ES.loadJSON(filename)
+    
+    # cleanup
+    rm(filename)
 end
