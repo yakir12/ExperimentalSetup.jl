@@ -1,34 +1,71 @@
 module ExperimentalSetup
 
-using DataStructures
+using DataStructures # needed for the sorted Dict 
 
 export  Factor, Rep,
         delete, replace!
 
 import Base: ∈, push!, delete!, empty!
 
+"""
+    Factor(name::String, levels::Vector{String})
+
+Container for a factor and the possible levels it can attain.
+
+# Examples
+```julia-repl
+julia> Factor("a", ["a", "b"])
+ExperimentalSetup.Factor("a", String["a", "b"])
+```
+"""
 struct Factor
     name::String
     levels::Vector{String}
 end
 
-struct Setup
-    levels::Vector{Int}
-    n::Base.RefValue{Int}
-end
-
-struct Metadata
+struct Patadata
     factors::Vector{Factor}
-    setups::Vector{Setup}
     nfactors::Int
 
-    Metadata(factors::Vector{Factor}, setups::Vector{Setup}) = new(factors, setups, length(factors))
+    Patadata(factors::Vector{Factor}) = new(factors, length(factors))
 end
 
-Metadata(factors::Vector{Factor}) = Metadata(factors, Setup[])
+Patadata() = Patadata(Factor[])
 
-Metadata() = Metadata(Factor[])
+"""
+    Setup(levels::Vector{Int}, n::Int)
 
+Represents a specific experimental setup, and its total number of replicates. Given a vector of `Factor`s, `levels` is a vector of indices whos elements point to the level of its corresponding `Factor`.
+"""
+mutable struct Setup
+    levels::Vector{Int}
+    n::Int
+end
+
+"""
+    Metadata(factors::Vector{Factor}, setups::Vector{Setup}, nfactors::Int)
+
+Holds all the metadata for a specific experiment. 
+"""
+struct Metadata
+    pd::Patadata
+    setups::Vector{Setup}
+
+    function Metadata(pd::Patadata, setups::Vector{Setup}) 
+        @assert pd.nfactors == length(setups.levels)
+        @assert all(level ≤ length(factor.levels) for (level, factor) in zip(setups.levels, pd.factors))
+        return new(pd, setups)
+    end
+end
+
+Metadata() = Metadata(Patadata(), Setup[])
+
+
+"""
+    Rep(setup::Int, replicate::Int, comment::String)
+
+One replicattion 
+"""
 mutable struct Rep
     setup::Int
     replicate::Int
@@ -69,11 +106,11 @@ function push!(md::Metadata, str_levels::Vector{String})
     end
     i = findfirst(x -> x.levels == levels, md.setups)
     if i == 0
-        push!(md.setups, Setup(levels, Ref(0)))
+        push!(md.setups, Setup(levels, 0))
         i = length(md.setups)
     end
-    md.setups[i].n.x += 1
-    return (i, md.setups[i].n.x)
+    md.setups[i].n += 1
+    return (i, md.setups[i].n)
 end
 
 function push!(a::Log, str_levels::Vector{String}, comment::String)
@@ -104,11 +141,11 @@ pop(a::Log, k::T) where T <: Integer = pop(a, UInt64(k))
 # deletes
 
 function _delete!(md::Metadata, setup::Int)
-    step_setup = md.setups[setup].n.x == 1
+    step_setup = md.setups[setup].n == 1
     if step_setup
         deleteat!(md.setups, setup)
     else
-        md.setups[setup].n.x -= 1
+        md.setups[setup].n -= 1
     end
     return step_setup
 end
@@ -174,11 +211,11 @@ end
 #=function delete!(a::Log, x::Rep)
     x ∉ a && return a
     step_setup = false
-    if a.md.setups[x.setup].n.x == 1
+    if a.md.setups[x.setup].n == 1
         deleteat!(a.md.setups, x.setup)
         step_setup = true
     else
-        a.md.setups[x.setup].n.x -= 1
+        a.md.setups[x.setup].n -= 1
     end
     ind = 0
     for (i,r) in enumerate(a.reps)

@@ -7,7 +7,7 @@ import Base: ==
 ==(a::ES.Metadata, b::ES.Metadata) = a.factors == b.factors && a.nfactors == b.nfactors && a.setups == b.setups
 ==(a::ES.Factor, b::ES.Factor) = a.name == b.name && a.levels == b.levels
 ==(a::Vector{ES.Factor}, b::Vector{ES.Factor}) = length(a) == length(b) && all(a[i] == b[i] for i in 1:length(a))
-==(a::ES.Setup, b::ES.Setup) = a.levels == b.levels && a.n.x == b.n.x
+==(a::ES.Setup, b::ES.Setup) = a.levels == b.levels && a.n == b.n
 ==(a::Vector{ES.Setup}, b::Vector{ES.Setup}) = length(a) == length(b) && all(a[i] == b[i] for i in 1:length(a))
 ==(a::ES.Rep, b::ES.Rep) = a.comment == b.comment && a.replicate == b.replicate && a.setup == b.setup
 ==(a::Vector{ES.Rep}, b::Vector{ES.Rep}) = length(a) == length(b) && all(a[i] == b[i] for i in 1:length(a))
@@ -107,7 +107,7 @@ end
     a = create_log()
     b = create_log(string.('a':'g'))
     c = ES.combine(a,b)
-    @test c == ExperimentalSetup.Log(ExperimentalSetup.Metadata(ExperimentalSetup.Factor[ExperimentalSetup.Factor("1", String["1"]), ExperimentalSetup.Factor("2", String["1", "2"]), ExperimentalSetup.Factor("3", String["1", "2", "3"]), ExperimentalSetup.Factor("4", String["1", "2", "3", "4"]), ExperimentalSetup.Factor("5", String["1", "2", "3", "4", "5"]), ExperimentalSetup.Factor("a", String["a"]), ExperimentalSetup.Factor("b", String["a", "b"]), ExperimentalSetup.Factor("c", String["a", "b", "c"]), ExperimentalSetup.Factor("d", String["a", "b", "c", "d"]), ExperimentalSetup.Factor("e", String["a", "b", "c", "d", "e"]), ExperimentalSetup.Factor("f", String["a", "b", "c", "d", "e", "f"]), ExperimentalSetup.Factor("g", String["a", "b", "c", "d", "e", "f", "g"])], ExperimentalSetup.Setup[ExperimentalSetup.Setup([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], Base.RefValue{Int64}(2)), ExperimentalSetup.Setup([1, 2, 3, 4, 5, 1, 1, 1, 1, 1, 1, 1], Base.RefValue{Int64}(1)), ExperimentalSetup.Setup([1, 1, 1, 1, 1, 1, 2, 3, 4, 5, 6, 7], Base.RefValue{Int64}(1))]), 0x0000000000000004, SortedDict(0x0000000000000001=>ExperimentalSetup.Rep(1, 1, "comment"),0x0000000000000002=>ExperimentalSetup.Rep(2, 1, "comment"),0x0000000000000003=>ExperimentalSetup.Rep(1, 2, "comment"),0x0000000000000004=>ExperimentalSetup.Rep(3, 1, "comment")))
+    @test c == ExperimentalSetup.Log(ExperimentalSetup.Metadata(ExperimentalSetup.Factor[ExperimentalSetup.Factor("1", String["1"]), ExperimentalSetup.Factor("2", String["1", "2"]), ExperimentalSetup.Factor("3", String["1", "2", "3"]), ExperimentalSetup.Factor("4", String["1", "2", "3", "4"]), ExperimentalSetup.Factor("5", String["1", "2", "3", "4", "5"]), ExperimentalSetup.Factor("a", String["a"]), ExperimentalSetup.Factor("b", String["a", "b"]), ExperimentalSetup.Factor("c", String["a", "b", "c"]), ExperimentalSetup.Factor("d", String["a", "b", "c", "d"]), ExperimentalSetup.Factor("e", String["a", "b", "c", "d", "e"]), ExperimentalSetup.Factor("f", String["a", "b", "c", "d", "e", "f"]), ExperimentalSetup.Factor("g", String["a", "b", "c", "d", "e", "f", "g"])], ExperimentalSetup.Setup[ExperimentalSetup.Setup([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 2), ExperimentalSetup.Setup([1, 2, 3, 4, 5, 1, 1, 1, 1, 1, 1, 1], 1), ExperimentalSetup.Setup([1, 1, 1, 1, 1, 1, 2, 3, 4, 5, 6, 7], 1)]), 0x0000000000000004, SortedDict(0x0000000000000001=>ExperimentalSetup.Rep(1, 1, "comment"),0x0000000000000002=>ExperimentalSetup.Rep(2, 1, "comment"),0x0000000000000003=>ExperimentalSetup.Rep(1, 2, "comment"),0x0000000000000004=>ExperimentalSetup.Rep(3, 1, "comment")))
 
 end
 
